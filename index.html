@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>MDF Project Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; }
+    #map { width: 100vw; height: 100vh; }
+
+    #map-header {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 4;
+      width: calc(100% - 32px);
+      max-width: 640px;
+      background: rgba(31, 31, 31, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    #brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+
+    #mdf-logo {
+      height: 56px;
+      width: auto;
+      flex-shrink: 0;
+    }
+
+    #map-title {
+      color: #DC582A;
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1.1;
+      text-align: center;
+    }
+
+    #search-toggle {
+      margin: 8px auto 0;
+      display: block;
+      border: none;
+      border-radius: 999px;
+      padding: 9px 16px;
+      background: #DC582A;
+      color: #ffffff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #search-wrapper {
+      display: none;
+      margin-top: 10px;
+    }
+
+    #search-wrapper.open {
+      display: block;
+    }
+
+    #map-subtitle {
+      color: #ffffff;
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    #search-panel {
+      display: flex;
+      gap: 8px;
+    }
+
+    #location-search {
+      flex: 1;
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    #search-button {
+      border: none;
+      border-radius: 10px;
+      padding: 12px 14px;
+      background: #DC582A;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    #search-status {
+      color: white;
+      font-size: 12px;
+      text-align: center;
+      min-height: 16px;
+      margin-top: 8px;
+    }
+
+    #stats-bar {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+      width: calc(100% - 40px);
+      max-width: 1200px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+    }
+
+    #stats-bar::-webkit-scrollbar { display: none; }
+
+    #stats-cards {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+      justify-content: center;
+      width: max-content;
+      min-width: 100%;
+    }
+
+    .stat-card {
+      min-width: 180px;
+      background: rgba(31, 31, 31, 0.82);
+      backdrop-filter: blur(10px);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .stat-value {
+      color: #DC582A;
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      color: #ffffff;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+
+    .mapboxgl-popup-content {
+      padding: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      width: 520px;
+      max-width: 520px;
+      background: #1f1f1f;
+      color: #ffffff;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    .mapboxgl-popup-tip { border-top-color: #1f1f1f; }
+
+    .mapboxgl-popup-close-button {
+      color: #ffffff;
+      font-size: 18px;
+      padding: 6px 9px;
+    }
+
+    .popup-card { padding: 16px; }
+
+    .popup-title {
+      color: #DC582A;
+      font-family: "Roc Grotesk Wide Bold", Arial, sans-serif;
+      font-weight: 700;
+      font-size: 22px;
+      line-height: 1.2;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .popup-summary {
+      color: #ffffff;
+      font-family: "Roc Grotesk Condensed Bold", Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.45;
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
+    .popup-highlight {
+      color: #DC582A;
+      font-weight: 700;
+    }
+
+    .popup-narrative {
+      color: #ffffff;
+      font-family: "Roc Grotesk Regular", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.55;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .popup-photo-placeholder {
+      color: #aaaaaa;
+      font-size: 12px;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.18);
+      text-align: center;
+    }
+
+    .photo-gallery {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      margin-top: 12px;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .popup-photo {
+      width: 100%;
+      min-width: 100%;
+      max-height: 240px;
+      object-fit: cover;
+      border-radius: 8px;
+      scroll-snap-align: center;
+    }
+
+    .photo-count {
+      color: #aaaaaa;
+      font-size: 12px;
+      text-align: center;
+      margin-top: 6px;
+    }
+
+    @media (max-width: 640px) {
+      #map-header {
+        top: 10px;
+        width: calc(100% - 20px);
+        padding: 10px;
+      }
+
+      #brand-row { gap: 8px; }
+      #mdf-logo { height: 42px; }
+      #map-title { font-size: 21px; }
+
+      #search-toggle {
+        padding: 8px 14px;
+        font-size: 13px;
+      }
+
+      #map-subtitle { font-size: 13px; }
+
+      #location-search {
+        font-size: 13px;
+        padding: 11px;
+      }
+
+      #search-button {
+        padding: 11px 12px;
+      }
+
+      .mapboxgl-popup-content {
+        width: 88vw;
+        max-width: 88vw;
+      }
+
+      .popup-photo { max-height: 210px; }
+
+      #stats-bar {
+        bottom: 12px;
+        width: calc(100% - 24px);
+      }
+
+      .stat-card {
+        min-width: 155px;
+        padding: 12px;
+      }
+
+      .stat-value { font-size: 23px; }
+      .stat-label { font-size: 12px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+
+  <div id="map-header">
+    <div id="brand-row">
+      <img id="mdf-logo" src="icons/mdf-logo.png" alt="Mule Deer Foundation logo">
+      <div id="map-title">Mule Deer Foundation Project Map</div>
+    </div>
+
+    <button id="search-toggle">Find projects near you</button>
+
+    <div id="search-wrapper">
+      <div id="map-subtitle">Enter an address, town, ZIP, or hunting area</div>
+
+      <div id="search-panel">
+        <input
+          id="location-search"
+          type="text"
+          placeholder="Example: Saratoga, WY or Hunt Unit 270"
+          autocomplete="off"
+        >
+        <button id="search-button">Search</button>
+      </div>
+
+      <div id="search-status"></div>
+    </div>
+  </div>
+
+  <div id="stats-bar">
+    <div id="stats-cards"></div>
+  </div>
+
+  <script>
+    mapboxgl.accessToken =  "MAPBOX_TOKEN_PLACEHOLDER";
+
+    const CONFIG = {
+      styleUrl: "mapbox://styles/ehartshorn/cmp7fivgh008z01spasjxa412",
+      sourceId: "projects-source",
+      clusterLayerId: "project-clusters",
+      clusterCountLayerId: "project-cluster-count",
+      projectLayerId: "unclustered-projects",
+      selectedProjectLayerId: "selected-project-icons",
+      nearestProjectLayerId: "nearest-project-icons",
+      selectedProjectPinLayerId: "selected-project-pin-icons",
+      nearestProjectPinLayerId: "nearest-project-pin-icons",
+      searchMarkerSourceId: "search-location-source",
+      searchMarkerLayerId: "search-location-marker",
+      huntUnitSourceId: "hunt-units-source",
+      selectedHuntUnitLayerId: "selected-hunt-unit-boundary",
+      huntUnitsPath: "data/hunt_units.geojson",
+      studioProjectLayerToHide: "projects-2fstff",
+      nearestProjectCount: 3
+    };
+
+    let visibleProjectFeatures = [];
+    let statsProjectFeatures = [];
+    let huntUnitFeatures = [];
+    let activePopup = null;
+
+    const map = new mapboxgl.Map({
+      container: "map",
+      style: CONFIG.styleUrl,
+      center: [-111.5, 39.5],
+      zoom: 5
+    });
+
+    map.addControl(new mapboxgl.NavigationControl(), "top-right");
+
+    document.getElementById("search-toggle").addEventListener("click", () => {
+      const wrapper = document.getElementById("search-wrapper");
+      wrapper.classList.toggle("open");
+
+      if (wrapper.classList.contains("open")) {
+        document.getElementById("location-search").focus();
+      }
+    });
+
+    function setSearchStatus(message) {
+      document.getElementById("search-status").textContent = message || "";
+    }
+
+    function parseNumber(value) {
+      if (value === null || value === undefined || value === "") return 0;
+      const cleaned = String(value).replace(/,/g, "").trim();
+      const num = Number(cleaned);
+      return Number.isFinite(num) ? num : 0;
+    }
+
+    function hasValue(value) {
+      return parseNumber(value) !== 0;
+    }
+
+    function isFenceProject(props) {
+      return String(props["Project Type"] || "").toLowerCase().includes("fence");
+    }
+
+    function formatNumber(value) {
+      return Math.round(value).toLocaleString();
+    }
+
+    function getHerdGmuValue(props) {
+      return parseNumber(props["Herds/GMUs Impacted"]);
+    }
+
+    function getDeerCapacityValue(props) {
+      return parseNumber(props["Deer Capacity"]);
+    }
+
+    function buildStatsFromProps(props) {
+      const stats = [];
+
+      stats.push({
+        label: "Acres Habitat Improved",
+        value: parseNumber(props["Acres Benefitted"])
+      });
+
+      if (isFenceProject(props) && hasValue(props["Miles Treated"])) {
+        stats.push({
+          label: "Miles Fence Replaced & Repaired",
+          value: parseNumber(props["Miles Treated"])
+        });
+      }
+
+      if (hasValue(props["Structures Installed"])) {
+        stats.push({
+          label: "Drinkers Installed",
+          value: parseNumber(props["Structures Installed"])
+        });
+      }
+
+      const herdsGmusValue = getHerdGmuValue(props);
+      if (herdsGmusValue !== 0) {
+        stats.push({
+          label: "Mule Deer Herds Benefitted",
+          value: herdsGmusValue
+        });
+      }
+
+      if (hasValue(props["Volunteer Hours"])) {
+        stats.push({
+          label: "Hours You Volunteered!",
+          value: parseNumber(props["Volunteer Hours"])
+        });
+      }
+
+      const deerCapacityValue = getDeerCapacityValue(props);
+      if (deerCapacityValue !== 0) {
+        stats.push({
+          label: "Deer Restored to the Landscape",
+          value: deerCapacityValue
+        });
+      }
+
+      return stats;
+    }
+
+    function renderStats(title, stats) {
+      const cards = document.getElementById("stats-cards");
+      cards.innerHTML = "";
+
+      stats.forEach(stat => {
+        cards.innerHTML += `
+          <div class="stat-card">
+            <div class="stat-value">${formatNumber(stat.value)}</div>
+            <div class="stat-label">${stat.label}</div>
+          </div>
+        `;
+      });
+    }
+
+    function renderTotalStats() {
+      const totals = {
+        "Acres Benefitted": 0,
+        "Miles Treated": 0,
+        "Structures Installed": 0,
+        "Volunteer Hours": 0,
+        "Herds/GMUs Impacted": 0,
+        "Deer Capacity": 0,
+        "Project Type": "fence"
+      };
+
+      statsProjectFeatures.forEach(feature => {
+        const props = feature.properties;
+
+        totals["Acres Benefitted"] += parseNumber(props["Acres Benefitted"]);
+
+        if (isFenceProject(props)) {
+          totals["Miles Treated"] += parseNumber(props["Miles Treated"]);
+        }
+
+        totals["Structures Installed"] += parseNumber(props["Structures Installed"]);
+        totals["Volunteer Hours"] += parseNumber(props["Volunteer Hours"]);
+        totals["Herds/GMUs Impacted"] += getHerdGmuValue(props);
+        totals["Deer Capacity"] += getDeerCapacityValue(props);
+      });
+
+      renderStats("Project Impact Totals", buildStatsFromProps(totals));
+    }
+
+    function setFeatureCollection(sourceId, features) {
+      if (!map.getSource(sourceId)) return;
+
+      map.getSource(sourceId).setData({
+        type: "FeatureCollection",
+        features: features
+      });
+    }
+
+    function clearSelection() {
+      setFeatureCollection("selected-project-source", []);
+
+      if (activePopup) {
+        const popupToRemove = activePopup;
+        activePopup = null;
+        popupToRemove.remove();
+      }
+
+      renderTotalStats();
+    }
+
+    function clearSelectedHuntUnit() {
+      setFeatureCollection(CONFIG.huntUnitSourceId, []);
+    }
+
+    function clearNearestSearch() {
+      setFeatureCollection("nearest-projects-source", []);
+      setFeatureCollection(CONFIG.searchMarkerSourceId, []);
+      clearSelectedHuntUnit();
+      setSearchStatus("");
+    }
+
+    function highlightProject(feature) {
+      setFeatureCollection("selected-project-source", [feature]);
+    }
+
+    function highlightNearestProjects(features) {
+      setFeatureCollection("nearest-projects-source", features);
+    }
+
+    function setSearchMarker(lon, lat) {
+      setFeatureCollection(CONFIG.searchMarkerSourceId, [{
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [lon, lat]
+        },
+        properties: {}
+      }]);
+    }
+
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function isSafeImageUrl(url) {
+      try {
+        const parsedUrl = new URL(url, window.location.href);
+        return parsedUrl.protocol === "https:" || parsedUrl.protocol === "http:";
+      } catch {
+        return false;
+      }
+    }
+
+    async function fetchJson(path) {
+      const response = await fetch(path, { cache: "no-cache" });
+
+      if (!response.ok) {
+        throw new Error(`Failed to load ${path}: ${response.status}`);
+      }
+
+      return response.json();
+    }
+
+    function buildPopupHtml(props) {
+      const projectName = escapeHtml(
+        props["Public Name"] ||
+        props["Project Name"] ||
+        props["Project ID"] ||
+        "Project"
+      );
+
+      const projectType = escapeHtml(props["Project Type"] || "project");
+      const county = escapeHtml(props["County"] || "Unknown County");
+      const state = escapeHtml(props["State"] || "Unknown State");
+      const narrative = escapeHtml(props["Narrative"] || "");
+
+      let html = `
+        <div class="popup-card">
+          <div class="popup-title">${projectName}</div>
+          <div class="popup-summary">
+            This <span class="popup-highlight">${projectType}</span> project is located in
+            <span class="popup-highlight">${county}</span>, <span class="popup-highlight">${state}</span>.
+          </div>
+      `;
+
+      if (narrative) {
+        html += `<div class="popup-narrative">${narrative}</div>`;
+      }
+
+      let photoUrls = [];
+
+      if (Array.isArray(props.photo_urls)) {
+        photoUrls = props.photo_urls;
+      } else if (typeof props.photo_urls === "string" && props.photo_urls.trim()) {
+        try {
+          photoUrls = JSON.parse(props.photo_urls);
+        } catch {
+          photoUrls = [];
+        }
+      }
+
+      if (!photoUrls.length && props.photo_url) {
+        photoUrls = [props.photo_url];
+      }
+
+      photoUrls = photoUrls
+        .filter(url => typeof url === "string" && url.trim())
+        .filter(isSafeImageUrl);
+
+      if (photoUrls.length) {
+        html += `<div class="photo-gallery">`;
+
+        photoUrls.forEach((url, index) => {
+          html += `
+            <img
+              class="popup-photo"
+              src="${escapeHtml(url)}"
+              alt="Project photo ${index + 1}"
+              loading="lazy"
+            >
+          `;
+        });
+
+        html += `</div>`;
+
+        if (photoUrls.length > 1) {
+          html += `<div class="photo-count">Swipe to view ${photoUrls.length} photos</div>`;
+        }
+      } else {
+        html += `
+          <div class="popup-photo-placeholder">
+            Project photos will appear here when attachments are added.
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+      return html;
+    }
+
+    function loadMapImage(imageName, imagePath) {
+      return new Promise((resolve, reject) => {
+        map.loadImage(imagePath, (error, image) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          if (!map.hasImage(imageName)) {
+            map.addImage(imageName, image);
+          }
+
+          resolve();
+        });
+      });
+    }
+
+    function haversineDistanceMiles(lon1, lat1, lon2, lat2) {
+      const earthRadiusMiles = 3958.8;
+      const toRadians = degrees => degrees * Math.PI / 180;
+
+      const dLat = toRadians(lat2 - lat1);
+      const dLon = toRadians(lon2 - lon1);
+
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRadians(lat1)) *
+        Math.cos(toRadians(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      return earthRadiusMiles * c;
+    }
+
+    function findNearestProjects(lon, lat, count) {
+      return visibleProjectFeatures
+        .filter(feature => {
+          return (
+            feature.geometry &&
+            feature.geometry.type === "Point" &&
+            Array.isArray(feature.geometry.coordinates)
+          );
+        })
+        .map(feature => {
+          const [projectLon, projectLat] = feature.geometry.coordinates;
+
+          return {
+            feature: feature,
+            distance: haversineDistanceMiles(lon, lat, projectLon, projectLat)
+          };
+        })
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, count);
+    }
+
+    function normalizeSearchText(value) {
+      return String(value || "")
+        .toLowerCase()
+        .replace(/&/g, " and ")
+        .replace(/[-_/]+/g, " ")
+        .replace(/[^a-z0-9\s]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function findMatchingHuntUnit(query) {
+      const normalizedQuery = normalizeSearchText(query);
+      if (!normalizedQuery) return null;
+
+      const queryTokens = normalizedQuery.split(" ").filter(Boolean);
+
+      const scoredMatches = huntUnitFeatures.map(unit => {
+        const props = unit.properties || {};
+
+        const state = normalizeSearchText(props.state);
+        const agency = normalizeSearchText(props.agency);
+        const unitType = normalizeSearchText(props.unit_type);
+        const unitId = normalizeSearchText(props.unit_id);
+        const unitName = normalizeSearchText(props.unit_name);
+        const unitLabel = normalizeSearchText(props.unit_label);
+
+        const aliases = String(props.aliases || "")
+          .split("|")
+          .map(normalizeSearchText)
+          .filter(Boolean);
+
+        const searchableValues = [
+          state,
+          agency,
+          unitType,
+          unitId,
+          unitName,
+          unitLabel,
+          ...aliases
+        ].filter(Boolean);
+
+        let score = 0;
+
+        // Strongest: exact full label or exact alias
+        if (unitLabel === normalizedQuery) score += 1000;
+        if (aliases.includes(normalizedQuery)) score += 900;
+
+        // Strong: exact unit ID with state present in query
+        if (unitId && queryTokens.includes(unitId)) score += 250;
+        if (state && queryTokens.includes(state)) score += 200;
+
+        // Strong: query contains unit type terms
+        if (unitType && normalizedQuery.includes(unitType)) score += 150;
+
+        // State name/abbreviation helps
+        if (searchableValues.some(value => value === normalizedQuery)) score += 200;
+
+        // Alias phrase includes full query
+        if (aliases.some(alias => alias.includes(normalizedQuery))) score += 100;
+
+        // Unit label includes full query
+        if (unitLabel.includes(normalizedQuery)) score += 75;
+
+        // Penalize partial numeric/letter collisions like "15" matching "d15"
+        if (unitId && queryTokens.includes(unitId)) {
+          score += 150;
+        } else if (unitId && normalizedQuery.includes(unitId)) {
+          score += 25;
+        }
+
+        // Token overlap, but only whole-token overlap
+        const searchableTokenSet = new Set(
+          searchableValues.join(" ").split(" ").filter(Boolean)
+        );
+
+        queryTokens.forEach(token => {
+          if (searchableTokenSet.has(token)) {
+            score += 20;
+          }
+        });
+
+        return {
+          unit,
+          score
+        };
+      });
+
+      scoredMatches.sort((a, b) => b.score - a.score);
+
+      const bestMatch = scoredMatches[0];
+
+      if (!bestMatch || bestMatch.score < 120) {
+        return null;
+      }
+
+      return bestMatch.unit;
+    }
+
+    function findProjectsInsideHuntUnit(huntUnitFeature) {
+      return visibleProjectFeatures.filter(project => {
+        try {
+          return turf.booleanPointInPolygon(project, huntUnitFeature);
+        } catch {
+          return false;
+        }
+      });
+    }
+
+    function showSelectedHuntUnit(huntUnitFeature) {
+      setFeatureCollection(CONFIG.huntUnitSourceId, [huntUnitFeature]);
+    }
+
+    function fitToFeatures(features, searchLon, searchLat) {
+      const bounds = new mapboxgl.LngLatBounds();
+
+      bounds.extend([searchLon, searchLat]);
+
+      features.forEach(feature => {
+        bounds.extend(feature.geometry.coordinates);
+      });
+
+      map.fitBounds(bounds, {
+        padding: {
+          top: 140,
+          bottom: 160,
+          left: 60,
+          right: 60
+        },
+        maxZoom: 12,
+        duration: 900
+      });
+    }
+
+    function fitToHuntUnitAndProjects(huntUnitFeature, projectFeatures) {
+      const bounds = new mapboxgl.LngLatBounds();
+      const bbox = turf.bbox(huntUnitFeature);
+
+      bounds.extend([bbox[0], bbox[1]]);
+      bounds.extend([bbox[2], bbox[3]]);
+
+      projectFeatures.forEach(feature => {
+        bounds.extend(feature.geometry.coordinates);
+      });
+
+      map.fitBounds(bounds, {
+        padding: {
+          top: 140,
+          bottom: 160,
+          left: 60,
+          right: 60
+        },
+        maxZoom: 10,
+        duration: 900
+      });
+    }
+
+    function getProjectSearchText(feature) {
+  const props = feature.properties || {};
+
+  return [
+    props["Public Name"],
+    props["Project Name"],
+    props["Project ID"],
+    props["County"],
+    props["State"]
+  ]
+    .map(normalizeSearchText)
+    .filter(Boolean)
+    .join(" ");
+}
+
+function findMatchingProjects(query) {
+  const normalizedQuery = normalizeSearchText(query);
+  if (!normalizedQuery) return [];
+
+  const queryTokens = normalizedQuery.split(" ").filter(Boolean);
+
+  return visibleProjectFeatures
+    .map(feature => {
+      const props = feature.properties || {};
+
+      const publicName = normalizeSearchText(props["Public Name"]);
+      const projectName = normalizeSearchText(props["Project Name"]);
+      const projectId = normalizeSearchText(props["Project ID"]);
+      const searchableText = getProjectSearchText(feature);
+
+      let score = 0;
+
+      if (publicName === normalizedQuery) score += 1000;
+      if (projectName === normalizedQuery) score += 950;
+      if (projectId === normalizedQuery) score += 900;
+
+      if (publicName.includes(normalizedQuery)) score += 350;
+      if (projectName.includes(normalizedQuery)) score += 325;
+      if (projectId.includes(normalizedQuery)) score += 300;
+
+      const searchableTokenSet = new Set(
+        searchableText.split(" ").filter(Boolean)
+      );
+
+      queryTokens.forEach(token => {
+        if (searchableTokenSet.has(token)) {
+          score += 40;
+        }
+      });
+
+      return { feature, score };
+    })
+    .filter(item => item.score >= 160)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5)
+    .map(item => item.feature);
+}
+
+function runProjectSearch(query) {
+  const matchingProjects = findMatchingProjects(query);
+
+  if (!matchingProjects.length) {
+    return false;
+  }
+
+  clearSelection();
+  clearNearestSearch();
+  highlightNearestProjects(matchingProjects);
+
+  const bounds = new mapboxgl.LngLatBounds();
+
+  matchingProjects.forEach(feature => {
+    bounds.extend(feature.geometry.coordinates);
+  });
+
+  map.fitBounds(bounds, {
+    padding: {
+      top: 140,
+      bottom: 160,
+      left: 60,
+      right: 60
+    },
+    maxZoom: matchingProjects.length === 1 ? 11 : 9,
+    duration: 900
+  });
+
+  setSearchStatus(`Found ${matchingProjects.length} matching project(s).`);
+
+  return true;
+}
+
+    function runHuntUnitSearch(query) {
+      const matchingUnit = findMatchingHuntUnit(query);
+
+      if (!matchingUnit) {
+        return false;
+      }
+
+      const projectsInside = findProjectsInsideHuntUnit(matchingUnit);
+      const label = matchingUnit.properties.unit_label || "selected hunt unit";
+
+      clearSelection();
+      clearNearestSearch();
+      showSelectedHuntUnit(matchingUnit);
+      highlightNearestProjects(projectsInside);
+      fitToHuntUnitAndProjects(matchingUnit, projectsInside);
+
+      if (projectsInside.length) {
+        setSearchStatus(`Found ${projectsInside.length} project(s) in ${label}.`);
+      } else {
+        setSearchStatus(`Found ${label}, but no visible MDF projects are currently mapped inside this unit.`);
+      }
+
+      return true;
+    }
+
+    async function geocodeSearchText(query) {
+      const encodedQuery = encodeURIComponent(query);
+
+      const url =
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedQuery}.json` +
+        `?access_token=${mapboxgl.accessToken}` +
+        `&country=US` +
+        `&limit=1` +
+        `&autocomplete=false` +
+        `&bbox=-125,24,-66,50`;
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error("Geocoding request failed.");
+      }
+
+      const data = await response.json();
+
+      if (!data.features || !data.features.length) {
+        return null;
+      }
+
+      return data.features[0];
+    }
+
+    async function runNearestSearch() {
+      const input = document.getElementById("location-search");
+      const query = input.value.trim();
+
+      if (!query) {
+        setSearchStatus("Enter an address, town, ZIP, or hunting area.");
+        return;
+      }
+
+      const foundProject = runProjectSearch(query);
+
+      if (foundProject) {
+        return;
+      }
+
+      const foundHuntUnit = runHuntUnitSearch(query);
+
+      if (foundHuntUnit) {
+        return;
+      }
+
+      try {
+        setSearchStatus("Searching...");
+
+        const result = await geocodeSearchText(query);
+
+        if (!result) {
+          setSearchStatus("No location found. Try adding a state, like 'GMU 15 Utah'.");
+          return;
+        }
+
+        const [searchLon, searchLat] = result.center;
+        const nearest = findNearestProjects(
+          searchLon,
+          searchLat,
+          CONFIG.nearestProjectCount
+        );
+
+        if (!nearest.length) {
+          setSearchStatus("No nearby projects found.");
+          return;
+        }
+
+        const nearestFeatures = nearest.map(item => item.feature);
+
+        clearSelection();
+        clearNearestSearch();
+        highlightNearestProjects(nearestFeatures);
+        setSearchMarker(searchLon, searchLat);
+        fitToFeatures(nearestFeatures, searchLon, searchLat);
+
+        const nearestText = nearest
+          .map((item, index) => `${index + 1}: ${Math.round(item.distance)} mi`)
+          .join(" | ");
+
+        setSearchStatus(`Nearest projects found. ${nearestText}`);
+
+      } catch (error) {
+        console.error(error);
+        setSearchStatus("Search failed. Try again.");
+      }
+    }
+
+    document.getElementById("search-button").addEventListener("click", runNearestSearch);
+
+    document.getElementById("location-search").addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        runNearestSearch();
+      }
+    });
+
+    map.on("load", () => {
+      if (map.getLayer(CONFIG.studioProjectLayerToHide)) {
+        map.setLayoutProperty(CONFIG.studioProjectLayerToHide, "visibility", "none");
+      }
+
+      Promise.all([
+        loadMapImage("project-icon", "icons/project-icon.png"),
+        loadMapImage("project-cluster", "icons/project-cluster.png"),
+        loadMapImage("project-icon-selected", "icons/project-icon-selected.png"),
+        fetchJson("data/projects.geojson"),
+        fetchJson("data/projects_stats.geojson"),
+        fetchJson(CONFIG.huntUnitsPath)
+      ])
+      .then(([_, __, ___, mapData, statsData, huntUnitData]) => {
+        visibleProjectFeatures = mapData.features || [];
+        statsProjectFeatures = statsData.features || [];
+        huntUnitFeatures = huntUnitData.features || [];
+        renderTotalStats();
+
+        map.addSource(CONFIG.sourceId, {
+          type: "geojson",
+          data: mapData,
+          cluster: true,
+          clusterMaxZoom: 10,
+          clusterRadius: 50
+        });
+
+        map.addSource("selected-project-source", {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: []
+          }
+        });
+
+        map.addSource("nearest-projects-source", {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: []
+          }
+        });
+
+        map.addSource(CONFIG.searchMarkerSourceId, {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: []
+          }
+        });
+
+        map.addSource(CONFIG.huntUnitSourceId, {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: []
+          }
+        });
+
+        map.addLayer({
+          id: CONFIG.selectedHuntUnitLayerId,
+          type: "line",
+          source: CONFIG.huntUnitSourceId,
+          paint: {
+            "line-color": "#E1B74C",
+            "line-width": 3,
+            "line-opacity": 0.95,
+            "line-emissive-strength": 2
+          }
+        });
+
+        map.addLayer({
+          id: CONFIG.clusterLayerId,
+          type: "symbol",
+          source: CONFIG.sourceId,
+          filter: ["has", "point_count"],
+          layout: {
+            "icon-image": "project-cluster",
+            "icon-size": [
+              "step",
+              ["get", "point_count"],
+              0.12,
+              10, 0.16,
+              50, 0.22
+            ],
+            "icon-allow-overlap": true,
+            "icon-ignore-placement": true
+          },
+          paint: {
+            "icon-opacity": 0.95,
+            "icon-emissive-strength": 2
+          }
+        });
+
+        map.addLayer({
+          id: CONFIG.clusterCountLayerId,
+          type: "symbol",
+          source: CONFIG.sourceId,
+          filter: ["has", "point_count"],
+          layout: {
+            "text-field": ["get", "point_count_abbreviated"],
+            "text-size": 14,
+            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+            "text-allow-overlap": true,
+            "text-ignore-placement": true
+          },
+          paint: {
+            "text-color": "#ffffff",
+            "text-emissive-strength": 1.5
+          }
+        });
+
+        /*
+          Highlight layers use your existing project-icon-selected.png.
+          They are intentionally drawn BEFORE the normal project icons,
+          so the selected image acts like a glow behind the pin instead
+          of covering the pin.
+        */
+        map.addLayer({
+          id: CONFIG.nearestProjectLayerId,
+          type: "symbol",
+          source: "nearest-projects-source",
+          layout: {
+            "icon-image": "project-icon-selected",
+            "icon-size": 0.165,
+            "icon-rotate": 180,
+            "icon-allow-overlap": true,
+            "icon-ignore-placement": true
+          },
+          paint: {
+            "icon-opacity": 1,
+            "icon-emissive-strength": 2
+          }
+        });
+
+        map.addLayer({
+          id: CONFIG.selectedProjectLayerId,
+          type: "symbol",
+          source: "selected-project-source",
+          layout: {
+            "icon-image": "project-icon-selected",
+            "icon-size": 0.165,
+            "icon-rotate": 180,
+            "icon-allow-overlap": true,
+            "icon-ignore-placement": true
+          },
+          paint: {
+            "icon-opacity": 1,
+            "icon-emissive-strength": 2
+          }
+        });
+
+        map.addLayer({
+          id: CONFIG.projectLayerId,
+          type: "symbol",
+          source: CONFIG.sourceId,
+          filter: ["!", ["has", "point_count"]],
+          layout: {
+            "icon-image": "project-icon",
+            "icon-size": 0.04,
+            "icon-allow-overlap": false
+          },
+          paint: {
+            "icon-opacity": 1,
+            "icon-emissive-strength": 2
+          }
+        });
+
+        /*
+          These small normal-pin overlays make searched/selected projects
+          still show the regular MDF project icon even if the highlighted
+          project is coming from a separate search/selection source.
+        */
+        map.addLayer({
+          id: CONFIG.nearestProjectPinLayerId,
+          type: "symbol",
+          source: "nearest-projects-source",
+          layout: {
+            "icon-image": "project-icon",
+            "icon-size": 0.04,
+            "icon-allow-overlap": true,
+            "icon-ignore-placement": true
+          },
+          paint: {
+            "icon-opacity": 1,
+            "icon-emissive-strength": 2
+          }
+        });
+
+        map.addLayer({
+          id: CONFIG.selectedProjectPinLayerId,
+          type: "symbol",
+          source: "selected-project-source",
+          layout: {
+            "icon-image": "project-icon",
+            "icon-size": 0.04,
+            "icon-allow-overlap": true,
+            "icon-ignore-placement": true
+          },
+          paint: {
+            "icon-opacity": 1,
+            "icon-emissive-strength": 2
+          }
+        });
+
+        map.addLayer({
+          id: CONFIG.searchMarkerLayerId,
+          type: "circle",
+          source: CONFIG.searchMarkerSourceId,
+          paint: {
+            "circle-radius": 7,
+            "circle-color": "#ffffff",
+            "circle-stroke-color": "#DC582A",
+            "circle-stroke-width": 3,
+            "circle-opacity": 0.95,
+            "circle-emissive-strength": 2
+          }
+        });
+
+        map.on("click", CONFIG.clusterLayerId, (e) => {
+          const features = map.queryRenderedFeatures(e.point, {
+            layers: [CONFIG.clusterLayerId]
+          });
+
+          const clusterId = features[0].properties.cluster_id;
+
+          map.getSource(CONFIG.sourceId).getClusterExpansionZoom(clusterId, (err, zoom) => {
+            if (err) return;
+
+            map.easeTo({
+              center: features[0].geometry.coordinates,
+              zoom: zoom
+            });
+          });
+        });
+
+        map.on("click", CONFIG.projectLayerId, (e) => {
+          if (!e.features || !e.features.length) return;
+
+          const feature = e.features[0];
+          const props = feature.properties;
+          const coords = feature.geometry.coordinates.slice();
+
+          renderStats("Selected Project Impact", buildStatsFromProps(props));
+          highlightProject(feature);
+
+          if (activePopup) activePopup.remove();
+
+          activePopup = new mapboxgl.Popup({ offset: 16 })
+            .setLngLat(coords)
+            .setHTML(buildPopupHtml(props))
+            .addTo(map);
+
+          activePopup.on("close", () => {
+            activePopup = null;
+            clearSelection();
+          });
+        });
+
+        map.on("click", (e) => {
+          const clickedProjects = map.queryRenderedFeatures(e.point, {
+            layers: [CONFIG.projectLayerId, CONFIG.clusterLayerId]
+          });
+
+          if (clickedProjects.length === 0) {
+            clearSelection();
+            clearNearestSearch();
+          }
+        });
+
+        map.on("mouseenter", CONFIG.projectLayerId, () => {
+          map.getCanvas().style.cursor = "pointer";
+        });
+
+        map.on("mouseleave", CONFIG.projectLayerId, () => {
+          map.getCanvas().style.cursor = "";
+        });
+
+        map.on("mouseenter", CONFIG.clusterLayerId, () => {
+          map.getCanvas().style.cursor = "pointer";
+        });
+
+        map.on("mouseleave", CONFIG.clusterLayerId, () => {
+          map.getCanvas().style.cursor = "";
+        });
+      })
+      .catch(error => {
+        console.error("Error loading map data, stats data, hunt unit data, or icons:", error);
+      });
+    });
+  </script>
+</body>
+</html>
