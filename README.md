@@ -42,7 +42,7 @@ All valid MDF projects used for impact statistics.
 
 ### data/hunt_units.geojson
 
-Simplified hunt unit polygons used for hunt unit boundary search and project lookup.
+Simplified hunt unit polygons used for hunt unit boundary search and project lookup. This file is approximately 9 MB and loads behind Kinsta's CDN. Mobile performance should be confirmed during staging.
 
 ### data/pipeline_status.json
 
@@ -56,7 +56,7 @@ Map icon assets referenced by index.html using relative paths.
 
 ## Update cadence
 
-This repository is updated automatically by a GitHub Actions workflow in the MDF pipeline repository each time the pipeline runs successfully. The `pipeline_status.json` file records the timestamp of the last successful update.
+This repository is updated automatically by a GitHub Actions workflow in the MDF pipeline repository each time the pipeline runs successfully. The pipeline runs daily at 6:00 AM MT. The `pipeline_status.json` file records the timestamp of the last successful update.
 
 ---
 
@@ -64,4 +64,5 @@ This repository is updated automatically by a GitHub Actions workflow in the MDF
 
 - All paths in `index.html` are relative. The directory structure must be preserved as-is when deploying.
 - Project photos are not stored in this repository. Photo URLs in the GeoJSON files point to Cloudflare R2.
-- The Mapbox access token in `index.html` will be restricted to MDF domains before the map goes live on the public website.
+- The Mapbox access token in `index.html` is restricted and will not function on other domains.
+- The Mapbox token is injected automatically at deploy time by the pipeline.
