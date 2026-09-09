@@ -315,7 +315,7 @@
       <div id="map-title">Mule Deer Foundation Project Map</div>
     </div>
 
-    <button id="search-toggle">Find projects near you</button>
+    <button id="search-toggle">Search by Location</button>
 
     <div id="search-wrapper">
       <div id="map-subtitle">Enter an address, town, ZIP, or hunting area</div>
@@ -357,7 +357,9 @@
       selectedHuntUnitLayerId: "selected-hunt-unit-boundary",
       huntUnitsPath: "data/hunt_units.geojson",
       studioProjectLayerToHide: "projects-2fstff",
-      nearestProjectCount: 3
+      nearestProjectCount: 3,
+      userLocationSourceId: "user-location-source",
+      userLocationLayerId: "user-location-marker",
     };
 
     let visibleProjectFeatures = [];
@@ -991,6 +993,101 @@ function runProjectSearch(query) {
       return true;
     }
 
+    function runQrGeolocation() {
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has("locate")) return;
+
+  if (!navigator.geolocation) {
+    return;
+  }
+
+  const banner = document.createElement("div");
+  banner.style.cssText = `
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    background: rgba(31, 31, 31, 0.95);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    max-width: 320px;
+    width: calc(100% - 48px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+  `;
+  banner.innerHTML = `
+    <div style="color: #ffffff; font-size: 15px; margin-bottom: 16px; line-height: 1.5;">
+      Enable location to see projects near you.
+    </div>
+    <button id="qr-locate-confirm" style="
+      background: #DC582A;
+      color: #ffffff;
+      border: none;
+      border-radius: 999px;
+      padding: 10px 24px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      margin-right: 8px;
+    ">Enable Location</button>
+    <button id="qr-locate-dismiss" style="
+      background: transparent;
+      color: #aaaaaa;
+      border: none;
+      padding: 10px 12px;
+      font-size: 14px;
+      cursor: pointer;
+    ">Not now</button>
+  `;
+
+  document.body.appendChild(banner);
+
+  document.getElementById("qr-locate-dismiss").addEventListener("click", () => {
+    banner.remove();
+  });
+
+  document.getElementById("qr-locate-confirm").addEventListener("click", () => {
+    banner.remove();
+    setSearchStatus("Finding your location...");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const userLon = position.coords.longitude;
+        const userLat = position.coords.latitude;
+
+        const nearest = findNearestProjects(userLon, userLat, CONFIG.nearestProjectCount);
+
+        if (!nearest.length) {
+          setSearchStatus("No nearby projects found.");
+          return;
+        }
+
+        const nearestFeatures = nearest.map(item => item.feature);
+
+        clearNearestSearch();
+        highlightNearestProjects(nearestFeatures);
+        fitToFeatures(nearestFeatures, userLon, userLat);
+        setFeatureCollection(CONFIG.userLocationSourceId, [{
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [userLon, userLat] },
+          properties: {}
+        }]);
+
+        const nearestText = nearest
+          .map((item, index) => `${index + 1}: ${Math.round(item.distance)} mi`)
+          .join(" | ");
+
+        setSearchStatus(`Projects near you. ${nearestText}`);
+      },
+      () => {
+        setSearchStatus("");
+      },
+      { timeout: 10000 }
+    );
+  });
+}
     async function geocodeSearchText(query) {
       const encodedQuery = encodeURIComponent(query);
 
@@ -1145,6 +1242,11 @@ function runProjectSearch(query) {
             type: "FeatureCollection",
             features: []
           }
+        });
+
+        map.addSource(CONFIG.userLocationSourceId, {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] }
         });
 
         map.addLayer({
@@ -1307,6 +1409,20 @@ function runProjectSearch(query) {
           }
         });
 
+        map.addLayer({
+          id: CONFIG.userLocationLayerId,
+          type: "circle",
+          source: CONFIG.userLocationSourceId,
+          paint: {
+            "circle-radius": 8,
+            "circle-color": "#7DA1C4",
+            "circle-stroke-color": "#ffffff",
+            "circle-stroke-width": 3,
+            "circle-opacity": 0.95,
+            "circle-emissive-strength": 2
+          }
+        });
+
         map.on("click", CONFIG.clusterLayerId, (e) => {
           const features = map.queryRenderedFeatures(e.point, {
             layers: [CONFIG.clusterLayerId]
@@ -1373,6 +1489,9 @@ function runProjectSearch(query) {
         map.on("mouseleave", CONFIG.clusterLayerId, () => {
           map.getCanvas().style.cursor = "";
         });
+
+        runQrGeolocation();
+
       })
       .catch(error => {
         console.error("Error loading map data, stats data, hunt unit data, or icons:", error);
