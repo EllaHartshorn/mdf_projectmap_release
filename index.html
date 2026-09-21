@@ -994,8 +994,7 @@ function runProjectSearch(query) {
     }
 
     function runQrGeolocation() {
-  const params = new URLSearchParams(window.location.search);
-  if (!params.has("locate")) return;
+  if (!window.location.hash.includes("locate")) return;
 
   if (!navigator.geolocation) {
     return;
