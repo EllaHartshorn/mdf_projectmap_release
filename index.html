@@ -24,7 +24,7 @@
       background: rgba(31, 31, 31, 0.9);
       backdrop-filter: blur(10px);
       border-radius: 16px;
-      padding: 12px;
+      padding: 8px 8px 2px 8px;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
       border: 1px solid rgba(255,255,255,0.08);
     }
@@ -45,27 +45,21 @@
 
     #map-title {
       color: #DC582A;
-      font-size: 28px;
+      font-size: 24px;
       font-weight: 800;
       line-height: 1.1;
       text-align: center;
     }
 
-    #search-toggle {
-      margin: 8px auto 0;
+     #search-wrapper {
       display: block;
-      border: none;
-      border-radius: 999px;
-      padding: 9px 16px;
-      background: #DC582A;
-      color: #ffffff;
-      font-weight: 700;
-      cursor: pointer;
+      margin-top: 10px;
     }
 
-    #search-wrapper {
-      display: none;
-      margin-top: 10px;
+    #search-location-label {
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     #search-wrapper.open {
@@ -265,12 +259,8 @@
 
       #brand-row { gap: 8px; }
       #mdf-logo { height: 42px; }
-      #map-title { font-size: 21px; }
+      #map-title { font-size: 17px; }
 
-      #search-toggle {
-        padding: 8px 14px;
-        font-size: 13px;
-      }
 
       #map-subtitle { font-size: 13px; }
 
@@ -314,11 +304,9 @@
       <img id="mdf-logo" src="icons/mdf-logo.png" alt="Mule Deer Foundation logo">
       <div id="map-title">Mule Deer Foundation Project Map</div>
     </div>
-
-    <button id="search-toggle">Search by Location</button>
-
+    
     <div id="search-wrapper">
-      <div id="map-subtitle">Enter an address, town, ZIP, or hunting area</div>
+       <div id="map-subtitle"><span id="search-location-label">Search by Location:</span> Enter an address, town, ZIP, or hunting area</div>
 
       <div id="search-panel">
         <input
@@ -375,15 +363,6 @@
     });
 
     map.addControl(new mapboxgl.NavigationControl(), "top-right");
-
-    document.getElementById("search-toggle").addEventListener("click", () => {
-      const wrapper = document.getElementById("search-wrapper");
-      wrapper.classList.toggle("open");
-
-      if (wrapper.classList.contains("open")) {
-        document.getElementById("location-search").focus();
-      }
-    });
 
     function setSearchStatus(message) {
       document.getElementById("search-status").textContent = message || "";
