@@ -972,7 +972,8 @@ function runProjectSearch(query) {
       return true;
     }
 
-    function runQrGeolocation() {
+  function runQrGeolocation() {
+  console.log("runQrGeolocation fired, hash:", window.location.hash);
   if (!window.location.hash.includes("locate")) return;
 
   if (!navigator.geolocation) {
