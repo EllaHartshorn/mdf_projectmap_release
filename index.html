@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>MDF Project Map</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
@@ -51,7 +51,7 @@
       text-align: center;
     }
 
-     #search-wrapper {
+    #search-wrapper {
       display: block;
       margin-top: 10px;
     }
@@ -102,8 +102,8 @@
       color: white;
       font-size: 12px;
       text-align: center;
-      min-height: 16px;
-      margin-top: 8px;
+      min-height: 8px;
+      margin-top: 2px;
     }
 
     #stats-bar {
@@ -117,9 +117,197 @@
       overflow-x: auto;
       overflow-y: hidden;
       scrollbar-width: none;
+      transition: opacity 0.2s ease;
     }
 
     #stats-bar::-webkit-scrollbar { display: none; }
+
+    #stats-bar.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #stats-scroll-hint {
+      display: none;
+      position: absolute;
+      bottom: -2px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      z-index: 3;
+      pointer-events: none;
+      white-space: nowrap;
+            text-shadow: 0 0 8px rgba(0,0,0,1), 0 0 16px rgba(0,0,0,1), 0 0 24px rgba(0,0,0,0.9);
+    }
+
+    @media (max-width: 640px) {
+      #stats-scroll-hint { display: block; }
+    }
+
+    /* Info panel */
+    #info-tab {
+      position: fixed;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      z-index: 5;
+      background: rgba(31, 31, 31, 0.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-right: none;
+      border-radius: 10px 0 0 10px;
+      padding: 12px 8px;
+      cursor: pointer;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow: -3px 0 12px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+
+    #info-tab:hover {
+      background: rgba(50, 50, 50, 0.95);
+    }
+
+    #info-tab-icon {
+      font-size: 14px;
+      font-weight: 900;
+      color: #DC582A;
+      writing-mode: horizontal-tb;
+    }
+
+    #info-panel {
+      position: fixed;
+      top: 0;
+      right: -420px;
+      width: 400px;
+      height: 100%;
+      z-index: 20;
+      background: #1f1f1f;
+      box-shadow: -4px 0 24px rgba(0,0,0,0.5);
+      transition: right 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #info-panel.open {
+      right: 0;
+    }
+
+    #info-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      flex-shrink: 0;
+    }
+
+    #info-panel-title {
+      color: #DC582A;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    #info-panel-close {
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-size: 22px;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    #info-panel-body {
+      overflow-y: auto;
+      padding: 20px;
+      flex: 1;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .info-section {
+      margin-bottom: 24px;
+    }
+
+    .info-section-title {
+      color: #DC582A;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 10px;
+    }
+
+    .info-section p {
+      color: #ffffff;
+      font-size: 14px;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .info-section ul {
+      color: #ffffff;
+      font-size: 14px;
+      line-height: 1.6;
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .info-section ul li {
+      margin-bottom: 8px;
+    }
+
+    .info-section ul li strong {
+      color: #DC582A;
+    }
+
+    .info-disclaimer {
+      color: rgba(255,255,255,0.45);
+      font-size: 11px;
+      line-height: 1.55;
+      font-style: italic;
+      margin: 0;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    #info-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 19;
+      background: transparent;
+    }
+
+    #info-overlay.open {
+      display: block;
+    }
+
+    @media (max-width: 640px) {
+      #info-panel {
+        width: 100%;
+        right: -100%;
+      }
+
+      #info-tab {
+        top: auto;
+        bottom: 100px;
+        transform: none;
+      }
+    }
 
     #stats-cards {
       display: flex;
@@ -134,8 +322,8 @@
       min-width: 180px;
       background: rgba(31, 31, 31, 0.82);
       backdrop-filter: blur(10px);
-      border-radius: 14px;
-      padding: 14px;
+      border-radius: 10px;
+      padding: 8px;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
       flex-shrink: 0;
       border: 1px solid rgba(255,255,255,0.08);
@@ -160,12 +348,13 @@
       line-height: 1.3;
     }
 
+    /* Desktop popup styles */
     .mapboxgl-popup-content {
       padding: 0;
       border-radius: 12px;
       overflow: hidden;
-      width: 520px;
-      max-width: 520px;
+      width: 400px;
+      max-width: 400px;
       background: #1f1f1f;
       color: #ffffff;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
@@ -250,27 +439,197 @@
       margin-top: 6px;
     }
 
+    /* Mobile bottom sheet styles */
+    #project-sheet {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      background: #1f1f1f;
+      border-radius: 20px 20px 0 0;
+      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+      max-height: 55vh;
+      overflow: hidden;
+      flex-direction: column;
+      touch-action: none;
+    }
+
+    #project-sheet.open {
+      display: flex;
+    }
+
+    @media (min-width: 641px) {
+      #project-sheet.open {
+        position: fixed;
+        top: 50%;
+        bottom: auto;
+        left: 14px;
+        right: auto;
+        width: 380px;
+        max-height: 60vh;
+        transform: translateY(-50%);
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      }
+    }
+
+    #sheet-handle-bar {
+      width: 40px;
+      height: 4px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 2px;
+      margin: 10px auto 0;
+      flex-shrink: 0;
+      cursor: grab;
+    }
+
+    #sheet-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 12px 16px 0;
+      flex-shrink: 0;
+    }
+
+    #sheet-title {
+      color: #DC582A;
+      font-family: "Roc Grotesk Wide Bold", Arial, sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      line-height: 1.2;
+      flex: 1;
+      margin-right: 8px;
+      text-align: center;
+    }
+
+    #sheet-close {
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-size: 22px;
+      cursor: pointer;
+      padding: 0 0 0 8px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    #sheet-body {
+      overflow-y: auto;
+      padding: 12px 16px 24px;
+      flex: 1;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #sheet-summary {
+      color: #ffffff;
+      font-size: 14px;
+      line-height: 1.45;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    #sheet-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .sheet-stat-card {
+      background: rgba(255,255,255,0.07);
+      border-radius: 10px;
+      padding: 10px 12px;
+      flex: 1;
+      min-width: 120px;
+      text-align: center;
+    }
+
+    .sheet-stat-value {
+      color: #DC582A;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .sheet-stat-label {
+      color: #ffffff;
+      font-size: 11px;
+      line-height: 1.3;
+    }
+
+    #sheet-narrative {
+      color: #ffffff;
+      font-size: 13px;
+      line-height: 1.55;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    #sheet-photos {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      margin-top: 12px;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .sheet-photo {
+      width: 100%;
+      min-width: 100%;
+      max-height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+      scroll-snap-align: center;
+    }
+
+    #sheet-photo-count {
+      color: #aaaaaa;
+      font-size: 12px;
+      text-align: center;
+      margin-top: 6px;
+    }
+
+    #sheet-photo-placeholder {
+      color: #aaaaaa;
+      font-size: 12px;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.18);
+      text-align: center;
+    }
+
     @media (max-width: 640px) {
       #map-header {
         top: 10px;
         width: calc(100% - 20px);
-        padding: 10px;
+        padding: 6px 6px -4px 6px; 
       }
-
+      
+  
       #brand-row { gap: 8px; }
       #mdf-logo { height: 42px; }
       #map-title { font-size: 17px; }
 
-
-      #map-subtitle { font-size: 13px; }
+      #map-subtitle { font-size: 11px; }
 
       #location-search {
-        font-size: 13px;
-        padding: 11px;
+        font-size: 16px;
+        padding: 9px;
       }
 
       #search-button {
-        padding: 11px 12px;
+        padding: 9px 10px; 
+        font-size: 12px;
+      }
+
+       #search-status { 
+        min-height: 2px; margin-top: 4px; 
       }
 
       .mapboxgl-popup-content {
@@ -304,9 +663,9 @@
       <img id="mdf-logo" src="icons/mdf-logo.png" alt="Mule Deer Foundation logo">
       <div id="map-title">Mule Deer Foundation Project Map</div>
     </div>
-    
+
     <div id="search-wrapper">
-       <div id="map-subtitle"><span id="search-location-label">Search by Location:</span> Enter an address, town, ZIP, or hunting area</div>
+      <div id="map-subtitle"><span id="search-location-label">Search by Location:</span> Enter an address, town, ZIP, or hunting area</div>
 
       <div id="search-panel">
         <input
@@ -324,6 +683,62 @@
 
   <div id="stats-bar">
     <div id="stats-cards"></div>
+  </div>
+
+ <div id="stats-scroll-hint">&#8249; swipe for more stats &#8250;</div>
+
+  <!-- Info tab and panel -->
+  <div id="info-overlay"></div>
+
+  <div id="info-tab">
+    <span id="info-tab-icon">?</span>
+    About
+  </div>
+
+  <div id="info-panel">
+    <div id="info-panel-header">
+      <div id="info-panel-title">About This Map</div>
+      <button id="info-panel-close">&#x2715;</button>
+    </div>
+    <div id="info-panel-body">
+
+      <div class="info-section">
+        <div class="info-section-title">About This Map</div>
+        <p>The MDF Conservation Project Map showcases habitat improvement projects across the West funded and completed by the Mule Deer Foundation. These projects, including fence modifications, water developments, and vegetation treatments, directly improve the land mule deer depend on for survival and migration. Every project on this map represents a real investment in the landscapes hunters and wildlife share, and a direct contribution to restoring mule deer populations across the West.</p>
+      </div>
+
+      <div class="info-section">
+        <div class="info-section-title">How to Use This Map</div>
+        <ul>
+          <li><strong>Find projects near you</strong> — explore MDF's work in the areas you hunt and recreate. Type any location into the search bar and the map will zoom to the nearest projects.</li>
+          <li><strong>Explore a project</strong> — tap any black pin to see project details, photos, and impact stats.</li>
+          <li><strong>Browse by area</strong> — pinch to zoom and drag to pan the map to any region.</li>
+          <li><strong>Impact stats</strong> — the cards along the bottom show cumulative accomplishments across all MDF projects. When you select a project, they update to show that project's specific numbers.</li>
+        </ul>
+      </div>
+
+      <div class="info-section">
+        <p class="info-disclaimer">The information, data, and map layers presented in this Mule Deer Foundation application are provided for informational and educational purposes only and are compiled from multiple public and private sources, some developed independently of the Mule Deer Foundation (MDF). All materials are provided "as is," without warranty of any kind, express or implied, including but not limited to warranties of accuracy, completeness, merchantability, or fitness for a particular purpose. MDF does not guarantee positional accuracy and expressly disclaims any liability for errors, omissions, misinterpretations, or misuse of the data. The download, redistribution, or reliance upon this information for navigational, legal, regulatory, land management, or site-specific decision-making purposes is prohibited, and users assume all responsibility for independently verifying information with the appropriate managing agency before taking action based on this map.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Mobile bottom sheet -->
+  <div id="project-sheet">
+    <div id="sheet-handle-bar"></div>
+    <div id="sheet-header">
+      <div id="sheet-title"></div>
+      <button id="sheet-close">&#x2715;</button>
+    </div>
+    <div id="sheet-body">
+      <div id="sheet-summary"></div>
+      <div id="sheet-stats"></div>
+      <div id="sheet-narrative"></div>
+      <div id="sheet-photos"></div>
+      <div id="sheet-photo-count"></div>
+      <div id="sheet-photo-placeholder"></div>
+    </div>
   </div>
 
   <script>
@@ -355,14 +770,18 @@
     let huntUnitFeatures = [];
     let activePopup = null;
 
-    const map = new mapboxgl.Map({
+       const map = new mapboxgl.Map({
       container: "map",
       style: CONFIG.styleUrl,
       center: [-111.5, 39.5],
-      zoom: 5
+      zoom: window.innerWidth <= 640 ? 4.25 : 5
     });
 
     map.addControl(new mapboxgl.NavigationControl(), "top-right");
+
+    function isMobile() {
+      return window.innerWidth <= 640;
+    }
 
     function setSearchStatus(message) {
       document.getElementById("search-status").textContent = message || "";
@@ -427,7 +846,7 @@
 
       if (hasValue(props["Volunteer Hours"])) {
         stats.push({
-          label: "Hours You Volunteered!",
+          label: "Hours You Volunteered",
           value: parseNumber(props["Volunteer Hours"])
         });
       }
@@ -495,6 +914,121 @@
       });
     }
 
+    /* ── Mobile bottom sheet ── */
+
+    function openSheet(props) {
+      const projectName =
+        props["Public Name"] || props["Project Name"] || props["Project ID"] || "Project";
+      const projectType = props["Project Type"] || "project";
+      const county = props["County"] || "Unknown County";
+      const state = props["State"] || "Unknown State";
+      const narrative = props["Narrative"] || "";
+
+      document.getElementById("sheet-title").textContent = projectName;
+      document.getElementById("sheet-summary").innerHTML =
+        `This <span style="color:#DC582A;font-weight:700">${escapeHtml(projectType)}</span> project is located in <span style="color:#DC582A;font-weight:700">${escapeHtml(county)}</span>, <span style="color:#DC582A;font-weight:700">${escapeHtml(state)}</span>.`;
+
+      // Project-specific stats — only shown in sheet on mobile
+      // On desktop, stats appear in the bottom stats bar instead
+      const statsEl = document.getElementById("sheet-stats");
+      statsEl.innerHTML = "";
+      if (isMobile()) {
+        const stats = buildStatsFromProps(props);
+        stats.forEach(stat => {
+          statsEl.innerHTML += `
+            <div class="sheet-stat-card">
+              <div class="sheet-stat-value">${formatNumber(stat.value)}</div>
+              <div class="sheet-stat-label">${stat.label}</div>
+            </div>
+          `;
+        });
+      }
+
+      // Narrative
+      const narrativeEl = document.getElementById("sheet-narrative");
+      narrativeEl.style.display = narrative ? "block" : "none";
+      narrativeEl.textContent = narrative;
+
+      // Photos
+      let photoUrls = [];
+      if (Array.isArray(props.photo_urls)) {
+        photoUrls = props.photo_urls;
+      } else if (typeof props.photo_urls === "string" && props.photo_urls.trim()) {
+        try { photoUrls = JSON.parse(props.photo_urls); } catch { photoUrls = []; }
+      }
+      if (!photoUrls.length && props.photo_url) photoUrls = [props.photo_url];
+      photoUrls = photoUrls.filter(url => typeof url === "string" && url.trim()).filter(isSafeImageUrl);
+
+      const photosEl = document.getElementById("sheet-photos");
+      const photoCountEl = document.getElementById("sheet-photo-count");
+      const photoPlaceholderEl = document.getElementById("sheet-photo-placeholder");
+
+      photosEl.innerHTML = "";
+      photoCountEl.textContent = "";
+      photoPlaceholderEl.style.display = "none";
+
+      if (photoUrls.length) {
+        photoUrls.forEach((url, index) => {
+          photosEl.innerHTML += `<img class="sheet-photo" src="${escapeHtml(url)}" alt="Project photo ${index + 1}" loading="lazy">`;
+        });
+        if (photoUrls.length > 1) {
+          photoCountEl.textContent = `Swipe to view ${photoUrls.length} photos`;
+        }
+      } else {
+        photoPlaceholderEl.style.display = "block";
+        photoPlaceholderEl.textContent = "Project photos will appear here when attachments are added.";
+      }
+
+      document.getElementById("project-sheet").classList.add("open");
+      if (isMobile()) {
+        document.getElementById("stats-bar").classList.add("hidden");
+      }
+    }
+
+    function closeSheet() {
+      document.getElementById("project-sheet").classList.remove("open");
+      document.getElementById("stats-bar").classList.remove("hidden");
+    }
+
+    // Sheet close button
+    document.getElementById("sheet-close").addEventListener("click", () => {
+      closeSheet();
+      clearSelection();
+    });
+
+    // Swipe down to dismiss
+    (function setupSheetSwipe() {
+      const sheet = document.getElementById("project-sheet");
+      let startY = 0;
+      let isDragging = false;
+
+      sheet.addEventListener("touchstart", (e) => {
+        startY = e.touches[0].clientY;
+        isDragging = true;
+      }, { passive: true });
+
+      sheet.addEventListener("touchmove", (e) => {
+        if (!isDragging) return;
+        const delta = e.touches[0].clientY - startY;
+        if (delta > 0) {
+          sheet.style.transform = `translateY(${delta}px)`;
+        }
+      }, { passive: true });
+
+      sheet.addEventListener("touchend", (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        const delta = e.changedTouches[0].clientY - startY;
+        sheet.style.transform = "";
+        if (delta > 80) {
+          closeSheet();
+          clearSelection();
+        }
+      }, { passive: true });
+    })();
+
+    /* ── end mobile bottom sheet ── */
+
     function clearSelection() {
       setFeatureCollection("selected-project-source", []);
 
@@ -504,6 +1038,7 @@
         popupToRemove.remove();
       }
 
+      closeSheet();
       renderTotalStats();
     }
 
@@ -536,7 +1071,6 @@
         properties: {}
       }]);
     }
-
 
     function escapeHtml(value) {
       return String(value || "")
@@ -823,12 +1357,12 @@
 
       map.fitBounds(bounds, {
         padding: {
-          top: 140,
+          top: 250,
           bottom: 160,
           left: 60,
           right: 60
         },
-        maxZoom: 12,
+        maxZoom: 10,
         duration: 900
       });
     }
@@ -857,95 +1391,95 @@
     }
 
     function getProjectSearchText(feature) {
-  const props = feature.properties || {};
-
-  return [
-    props["Public Name"],
-    props["Project Name"],
-    props["Project ID"],
-    props["County"],
-    props["State"]
-  ]
-    .map(normalizeSearchText)
-    .filter(Boolean)
-    .join(" ");
-}
-
-function findMatchingProjects(query) {
-  const normalizedQuery = normalizeSearchText(query);
-  if (!normalizedQuery) return [];
-
-  const queryTokens = normalizedQuery.split(" ").filter(Boolean);
-
-  return visibleProjectFeatures
-    .map(feature => {
       const props = feature.properties || {};
 
-      const publicName = normalizeSearchText(props["Public Name"]);
-      const projectName = normalizeSearchText(props["Project Name"]);
-      const projectId = normalizeSearchText(props["Project ID"]);
-      const searchableText = getProjectSearchText(feature);
+      return [
+        props["Public Name"],
+        props["Project Name"],
+        props["Project ID"],
+        props["County"],
+        props["State"]
+      ]
+        .map(normalizeSearchText)
+        .filter(Boolean)
+        .join(" ");
+    }
 
-      let score = 0;
+    function findMatchingProjects(query) {
+      const normalizedQuery = normalizeSearchText(query);
+      if (!normalizedQuery) return [];
 
-      if (publicName === normalizedQuery) score += 1000;
-      if (projectName === normalizedQuery) score += 950;
-      if (projectId === normalizedQuery) score += 900;
+      const queryTokens = normalizedQuery.split(" ").filter(Boolean);
 
-      if (publicName.includes(normalizedQuery)) score += 350;
-      if (projectName.includes(normalizedQuery)) score += 325;
-      if (projectId.includes(normalizedQuery)) score += 300;
+      return visibleProjectFeatures
+        .map(feature => {
+          const props = feature.properties || {};
 
-      const searchableTokenSet = new Set(
-        searchableText.split(" ").filter(Boolean)
-      );
+          const publicName = normalizeSearchText(props["Public Name"]);
+          const projectName = normalizeSearchText(props["Project Name"]);
+          const projectId = normalizeSearchText(props["Project ID"]);
+          const searchableText = getProjectSearchText(feature);
 
-      queryTokens.forEach(token => {
-        if (searchableTokenSet.has(token)) {
-          score += 40;
-        }
+          let score = 0;
+
+          if (publicName === normalizedQuery) score += 1000;
+          if (projectName === normalizedQuery) score += 950;
+          if (projectId === normalizedQuery) score += 900;
+
+          if (publicName.includes(normalizedQuery)) score += 350;
+          if (projectName.includes(normalizedQuery)) score += 325;
+          if (projectId.includes(normalizedQuery)) score += 300;
+
+          const searchableTokenSet = new Set(
+            searchableText.split(" ").filter(Boolean)
+          );
+
+          queryTokens.forEach(token => {
+            if (searchableTokenSet.has(token)) {
+              score += 40;
+            }
+          });
+
+          return { feature, score };
+        })
+        .filter(item => item.score >= 160)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5)
+        .map(item => item.feature);
+    }
+
+    function runProjectSearch(query) {
+      const matchingProjects = findMatchingProjects(query);
+
+      if (!matchingProjects.length) {
+        return false;
+      }
+
+      clearSelection();
+      clearNearestSearch();
+      highlightNearestProjects(matchingProjects);
+
+      const bounds = new mapboxgl.LngLatBounds();
+
+      matchingProjects.forEach(feature => {
+        bounds.extend(feature.geometry.coordinates);
       });
 
-      return { feature, score };
-    })
-    .filter(item => item.score >= 160)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5)
-    .map(item => item.feature);
-}
+      map.fitBounds(bounds, {
+        padding: {
+          top: 140,
+          bottom: 160,
+          left: 60,
+          right: 60
+        },
+        maxZoom: matchingProjects.length === 1 ? 11 : 9,
+        duration: 900
+      });
 
-function runProjectSearch(query) {
-  const matchingProjects = findMatchingProjects(query);
+      setSearchStatus(`Found ${matchingProjects.length} matching project(s).`);
 
-  if (!matchingProjects.length) {
-    return false;
-  }
-
-  clearSelection();
-  clearNearestSearch();
-  highlightNearestProjects(matchingProjects);
-
-  const bounds = new mapboxgl.LngLatBounds();
-
-  matchingProjects.forEach(feature => {
-    bounds.extend(feature.geometry.coordinates);
-  });
-
-  map.fitBounds(bounds, {
-    padding: {
-      top: 140,
-      bottom: 160,
-      left: 60,
-      right: 60
-    },
-    maxZoom: matchingProjects.length === 1 ? 11 : 9,
-    duration: 900
-  });
-
-  setSearchStatus(`Found ${matchingProjects.length} matching project(s).`);
-
-  return true;
-}
+      return true;
+    }
 
     function runHuntUnitSearch(query) {
       const matchingUnit = findMatchingHuntUnit(query);
@@ -972,101 +1506,102 @@ function runProjectSearch(query) {
       return true;
     }
 
-  function runQrGeolocation() {
-  console.log("runQrGeolocation fired, hash:", window.location.hash);
-  if (!window.location.hash.includes("locate")) return;
+    function runQrGeolocation() {
+      console.log("runQrGeolocation fired, hash:", window.location.hash);
+      if (!window.location.hash.includes("locate")) return;
 
-  if (!navigator.geolocation) {
-    return;
-  }
+      if (!navigator.geolocation) {
+        return;
+      }
 
-  const banner = document.createElement("div");
-  banner.style.cssText = `
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 10;
-    background: rgba(31, 31, 31, 0.95);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px;
-    padding: 24px;
-    text-align: center;
-    max-width: 320px;
-    width: calc(100% - 48px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
-  `;
-  banner.innerHTML = `
-    <div style="color: #ffffff; font-size: 15px; margin-bottom: 16px; line-height: 1.5;">
-      Enable location to see projects near you.
-    </div>
-    <button id="qr-locate-confirm" style="
-      background: #DC582A;
-      color: #ffffff;
-      border: none;
-      border-radius: 999px;
-      padding: 10px 24px;
-      font-weight: 700;
-      font-size: 14px;
-      cursor: pointer;
-      margin-right: 8px;
-    ">Enable Location</button>
-    <button id="qr-locate-dismiss" style="
-      background: transparent;
-      color: #aaaaaa;
-      border: none;
-      padding: 10px 12px;
-      font-size: 14px;
-      cursor: pointer;
-    ">Not now</button>
-  `;
+      const banner = document.createElement("div");
+      banner.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+        background: rgba(31, 31, 31, 0.95);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 16px;
+        padding: 24px;
+        text-align: center;
+        max-width: 320px;
+        width: calc(100% - 48px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+      `;
+      banner.innerHTML = `
+        <div style="color: #ffffff; font-size: 15px; margin-bottom: 16px; line-height: 1.5;">
+          Enable location to see projects near you.
+        </div>
+        <button id="qr-locate-confirm" style="
+          background: #DC582A;
+          color: #ffffff;
+          border: none;
+          border-radius: 999px;
+          padding: 10px 24px;
+          font-weight: 700;
+          font-size: 14px;
+          cursor: pointer;
+          margin-right: 8px;
+        ">Enable Location</button>
+        <button id="qr-locate-dismiss" style="
+          background: transparent;
+          color: #aaaaaa;
+          border: none;
+          padding: 10px 12px;
+          font-size: 14px;
+          cursor: pointer;
+        ">Not now</button>
+      `;
 
-  document.body.appendChild(banner);
+      document.body.appendChild(banner);
 
-  document.getElementById("qr-locate-dismiss").addEventListener("click", () => {
-    banner.remove();
-  });
+      document.getElementById("qr-locate-dismiss").addEventListener("click", () => {
+        banner.remove();
+      });
 
-  document.getElementById("qr-locate-confirm").addEventListener("click", () => {
-    banner.remove();
-    setSearchStatus("Finding your location...");
+      document.getElementById("qr-locate-confirm").addEventListener("click", () => {
+        banner.remove();
+        setSearchStatus("Finding your location...");
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const userLon = position.coords.longitude;
-        const userLat = position.coords.latitude;
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const userLon = position.coords.longitude;
+            const userLat = position.coords.latitude;
 
-        const nearest = findNearestProjects(userLon, userLat, CONFIG.nearestProjectCount);
+            const nearest = findNearestProjects(userLon, userLat, CONFIG.nearestProjectCount);
 
-        if (!nearest.length) {
-          setSearchStatus("No nearby projects found.");
-          return;
-        }
+            if (!nearest.length) {
+              setSearchStatus("No nearby projects found.");
+              return;
+            }
 
-        const nearestFeatures = nearest.map(item => item.feature);
+            const nearestFeatures = nearest.map(item => item.feature);
 
-        clearNearestSearch();
-        highlightNearestProjects(nearestFeatures);
-        fitToFeatures(nearestFeatures, userLon, userLat);
-        setFeatureCollection(CONFIG.userLocationSourceId, [{
-          type: "Feature",
-          geometry: { type: "Point", coordinates: [userLon, userLat] },
-          properties: {}
-        }]);
+            clearNearestSearch();
+            highlightNearestProjects(nearestFeatures);
+            fitToFeatures(nearestFeatures, userLon, userLat);
+            setFeatureCollection(CONFIG.userLocationSourceId, [{
+              type: "Feature",
+              geometry: { type: "Point", coordinates: [userLon, userLat] },
+              properties: {}
+            }]);
 
-        const nearestText = nearest
-          .map((item, index) => `${index + 1}: ${Math.round(item.distance)} mi`)
-          .join(" | ");
+            const nearestText = nearest
+              .map((item, index) => `${index + 1}: ${Math.round(item.distance)} mi`)
+              .join(" | ");
 
-        setSearchStatus(`Projects near you. ${nearestText}`);
-      },
-      () => {
-        setSearchStatus("");
-      },
-      { timeout: 10000 }
-    );
-  });
-}
+            setSearchStatus(`Projects near you. ${nearestText}`);
+          },
+          () => {
+            setSearchStatus("");
+          },
+          { timeout: 10000 }
+        );
+      });
+    }
+
     async function geocodeSearchText(query) {
       const encodedQuery = encodeURIComponent(query);
 
@@ -1155,6 +1690,21 @@ function runProjectSearch(query) {
         setSearchStatus("Search failed. Try again.");
       }
     }
+
+    // Info panel
+    function openInfoPanel() {
+      document.getElementById("info-panel").classList.add("open");
+      document.getElementById("info-overlay").classList.add("open");
+    }
+
+    function closeInfoPanel() {
+      document.getElementById("info-panel").classList.remove("open");
+      document.getElementById("info-overlay").classList.remove("open");
+    }
+
+    document.getElementById("info-tab").addEventListener("click", openInfoPanel);
+    document.getElementById("info-panel-close").addEventListener("click", closeInfoPanel);
+    document.getElementById("info-overlay").addEventListener("click", closeInfoPanel);
 
     document.getElementById("search-button").addEventListener("click", runNearestSearch);
 
@@ -1429,17 +1979,12 @@ function runProjectSearch(query) {
           renderStats("Selected Project Impact", buildStatsFromProps(props));
           highlightProject(feature);
 
-          if (activePopup) activePopup.remove();
-
-          activePopup = new mapboxgl.Popup({ offset: 16 })
-            .setLngLat(coords)
-            .setHTML(buildPopupHtml(props))
-            .addTo(map);
-
-          activePopup.on("close", () => {
+          // Use sheet on all screen sizes, positioned differently via CSS
+          if (activePopup) {
+            activePopup.remove();
             activePopup = null;
-            clearSelection();
-          });
+          }
+          openSheet(props);
         });
 
         map.on("click", (e) => {
