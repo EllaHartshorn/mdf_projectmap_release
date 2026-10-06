@@ -653,6 +653,64 @@
       .stat-value { font-size: 23px; }
       .stat-label { font-size: 12px; }
     }
+    /* Geolocate prompt for QR code arrivals */
+    @keyframes geolocate-pulse {
+      0% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.5); opacity: 0.2; }
+      100% { transform: scale(1); opacity: 0.8; }
+    }
+
+    #geolocate-prompt {
+      position: fixed;
+      right: 52px;
+      top: 108px;
+      z-index: 5;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    #geolocate-prompt.visible {
+      display: flex;
+    }
+
+    #geolocate-prompt-label {
+      background: rgba(31, 31, 31, 0.92);
+      backdrop-filter: blur(10px);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+      white-space: nowrap;
+    }
+
+    #geolocate-prompt-arrow {
+      color: #DC582A;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    #geolocate-pulse-ring {
+      position: fixed;
+      right: 9px;
+      top: 108px;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 3px solid #DC582A;
+      animation: geolocate-pulse 1.5s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 5;
+      display: none;
+    }
+
+    #geolocate-pulse-ring.visible {
+      display: block;
+    }
+
   </style>
 </head>
 
@@ -742,6 +800,13 @@
     </div>
   </div>
 
+  <!-- Geolocate prompt for QR arrivals -->
+  <div id="geolocate-pulse-ring"></div>
+  <div id="geolocate-prompt">
+    <div id="geolocate-prompt-label">Tap to find projects near you</div>
+    <div id="geolocate-prompt-arrow">&#x276F;</div>
+  </div>
+
   <script>
     mapboxgl.accessToken = "pk.eyJ1IjoiZWhhcnRzaG9ybiIsImEiOiJjbXJ0bDZpcjgwNDEyMndvZmw0cHV5bHR3In0.AoELch4LU_2wTN48QOeEPg";
     
@@ -781,6 +846,13 @@
     });
 
     map.addControl(new mapboxgl.NavigationControl(), "top-right");
+
+    const geolocateControl = new mapboxgl.GeolocateControl({
+      positionOptions: { enableHighAccuracy: true },
+      trackUserLocation: false
+    });
+
+    map.addControl(geolocateControl, "top-right");
 
     function isMobile() {
       return window.innerWidth <= 640;
@@ -1563,92 +1635,7 @@
       return false;
     }
 
-    function runQrGeolocation() {
-      if (!window.location.hash.includes("locate")) return;
 
-      if (!navigator.geolocation) {
-        return;
-      }
-
-      const banner = document.createElement("div");
-      banner.style.cssText = `
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 10;
-        background: rgba(31, 31, 31, 0.95);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 16px;
-        padding: 24px;
-        text-align: center;
-        max-width: 320px;
-        width: calc(100% - 48px);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.45);
-      `;
-      banner.innerHTML = `
-        <div style="color: #ffffff; font-size: 15px; margin-bottom: 16px; line-height: 1.5;">
-          Enable location to see projects near you.
-        </div>
-        <button id="qr-locate-confirm" style="
-          background: #DC582A;
-          color: #ffffff;
-          border: none;
-          border-radius: 999px;
-          padding: 10px 24px;
-          font-weight: 700;
-          font-size: 14px;
-          cursor: pointer;
-          margin-right: 8px;
-        ">Enable Location</button>
-        <button id="qr-locate-dismiss" style="
-          background: transparent;
-          color: #aaaaaa;
-          border: none;
-          padding: 10px 12px;
-          font-size: 14px;
-          cursor: pointer;
-        ">Not now</button>
-      `;
-
-      document.body.appendChild(banner);
-
-      document.getElementById("qr-locate-dismiss").addEventListener("click", () => {
-        banner.remove();
-      });
-
-      document.getElementById("qr-locate-confirm").addEventListener("click", () => {
-        banner.remove();
-
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const userLon = position.coords.longitude;
-            const userLat = position.coords.latitude;
-
-            const nearest = findNearestProjects(userLon, userLat, CONFIG.nearestProjectCount);
-
-            if (!nearest.length) {
-              return;
-            }
-
-            const nearestFeatures = nearest.map(item => item.feature);
-
-            clearNearestSearch();
-            highlightNearestProjects(nearestFeatures);
-            fitToFeatures(nearestFeatures, userLon, userLat);
-            setFeatureCollection(CONFIG.userLocationSourceId, [{
-              type: "Feature",
-              geometry: { type: "Point", coordinates: [userLon, userLat] },
-              properties: {}
-            }]);
-
-          },
-          () => {
-          },
-          { timeout: 10000 }
-        );
-      });
-    }
 
     async function geocodeSearchText(query) {
       const encodedQuery = encodeURIComponent(query);
@@ -2065,14 +2052,54 @@
           map.getCanvas().style.cursor = "";
         });
 
-        runQrGeolocation();
+        // Hook Mapbox GeolocateControl into nearest projects logic
+        geolocateControl.on("geolocate", (e) => {
+          const userLon = e.coords.longitude;
+          const userLat = e.coords.latitude;
 
-        if (!isMobile()) {
-          document.getElementById("map-subtitle").innerHTML = '<span id="search-location-label">Search by Location:</span> Enter an address, town, ZIP, or hunt unit';
-          document.getElementById("location-search").placeholder = "Example: Laramie, WY or Hunt Unit 270";
+          const nearest = findNearestProjects(userLon, userLat, CONFIG.nearestProjectCount);
+          if (!nearest.length) return;
+
+          const nearestFeatures = nearest.map(item => item.feature);
+          clearNearestSearch();
+          highlightNearestProjects(nearestFeatures);
+          fitToFeatures(nearestFeatures, userLon, userLat);
+          setFeatureCollection(CONFIG.userLocationSourceId, [{
+            type: "Feature",
+            geometry: { type: "Point", coordinates: [userLon, userLat] },
+            properties: {}
+          }]);
+
+          // Hide prompt after location is found
+          document.getElementById("geolocate-prompt").classList.remove("visible");
+          document.getElementById("geolocate-pulse-ring").classList.remove("visible");
+        });
+
+        // Show geolocate prompt for QR code arrivals
+        if (window.location.hash.includes("locate")) {
+          setTimeout(() => {
+            const btn = document.querySelector(".mapboxgl-ctrl-geolocate");
+            if (btn) {
+              const rect = btn.getBoundingClientRect();
+              const ring = document.getElementById("geolocate-pulse-ring");
+              ring.style.top = (rect.top + rect.height / 2 - 19) + "px";
+              ring.style.left = (rect.left + rect.width / 2 - 19) + "px";
+              ring.style.right = "auto";
+            }
+
+            document.getElementById("geolocate-prompt").classList.add("visible");
+            document.getElementById("geolocate-pulse-ring").classList.add("visible");
+
+            if (btn) {
+              btn.addEventListener("click", () => {
+                document.getElementById("geolocate-prompt").classList.remove("visible");
+                document.getElementById("geolocate-pulse-ring").classList.remove("visible");
+              }, { once: true });
+            }
+          }, 1500);
         }
 
-                if (!isMobile()) {
+        if (!isMobile()) {
           document.getElementById("map-subtitle").innerHTML = '<span id="search-location-label">Search by Location:</span> Enter an address, town, ZIP, or hunt unit';
           document.getElementById("location-search").placeholder = "Example: Laramie, WY or Hunt Unit 270";
         }
