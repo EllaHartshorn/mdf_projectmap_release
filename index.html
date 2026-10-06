@@ -879,16 +879,12 @@
 
     function renderStats(title, stats) {
       const cards = document.getElementById("stats-cards");
-      cards.innerHTML = "";
-
-      stats.forEach(stat => {
-        cards.innerHTML += `
-          <div class="stat-card">
-            <div class="stat-value">${formatNumber(stat.value)}</div>
-            <div class="stat-label">${stat.label}</div>
-          </div>
-        `;
-      });
+      cards.innerHTML = stats.map(stat => `
+        <div class="stat-card">
+          <div class="stat-value">${formatNumber(stat.value)}</div>
+          <div class="stat-label">${stat.label}</div>
+        </div>
+      `).join("");
     }
 
     function renderTotalStats() {
@@ -949,14 +945,12 @@
       statsEl.innerHTML = "";
       if (isMobile()) {
         const stats = buildStatsFromProps(props);
-        stats.forEach(stat => {
-          statsEl.innerHTML += `
-            <div class="sheet-stat-card">
-              <div class="sheet-stat-value">${formatNumber(stat.value)}</div>
-              <div class="sheet-stat-label">${stat.label}</div>
-            </div>
-          `;
-        });
+        statsEl.innerHTML = stats.map(stat => `
+          <div class="sheet-stat-card">
+            <div class="sheet-stat-value">${formatNumber(stat.value)}</div>
+            <div class="sheet-stat-label">${stat.label}</div>
+          </div>
+        `).join("");
       }
 
       // Narrative
@@ -983,9 +977,9 @@
       photoPlaceholderEl.style.display = "none";
 
       if (photoUrls.length) {
-        photoUrls.forEach((url, index) => {
-          photosEl.innerHTML += `<img class="sheet-photo" src="${escapeHtml(url)}" alt="Project photo ${index + 1}" loading="lazy">`;
-        });
+        photosEl.innerHTML = photoUrls.map((url, index) =>
+          `<img class="sheet-photo" src="${escapeHtml(url)}" alt="Project photo ${index + 1}" loading="lazy">`
+        ).join("");
         if (photoUrls.length > 1) {
           photoCountEl.textContent = `Swipe to view ${photoUrls.length} photos`;
         }
@@ -1001,6 +995,8 @@
     }
 
     function closeSheet() {
+      // Release image memory before hiding sheet
+      document.querySelectorAll("#sheet-photos img").forEach(img => { img.src = ""; });
       document.getElementById("project-sheet").classList.remove("open");
       document.getElementById("stats-bar").classList.remove("hidden");
     }
@@ -1009,6 +1005,7 @@
     document.getElementById("sheet-close").addEventListener("click", () => {
       closeSheet();
       clearSelection();
+      renderTotalStats();
     });
 
     // Swipe down to dismiss
@@ -1038,6 +1035,7 @@
         if (delta > 80) {
           closeSheet();
           clearSelection();
+          renderTotalStats();
         }
       }, { passive: true });
     })();
@@ -1054,7 +1052,6 @@
       }
 
       closeSheet();
-      renderTotalStats();
     }
 
     function clearSelectedHuntUnit() {
@@ -1694,14 +1691,11 @@
       if (/^\d{5}$/.test(query)) {
         try {
           const result = await geocodeSearchText(query);
-          if (!result) {
-            return;
-          }
+          if (!result) { return; }
           const [searchLon, searchLat] = result.center;
           const nearest = findNearestProjects(searchLon, searchLat, CONFIG.nearestProjectCount);
           if (!nearest.length) { return; }
           const nearestFeatures = nearest.map(item => item.feature);
-          clearSelection(); clearNearestSearch();
           highlightNearestProjects(nearestFeatures);
           setSearchMarker(searchLon, searchLat);
           fitToFeatures(nearestFeatures, searchLon, searchLat);
@@ -1711,11 +1705,12 @@
         return;
       }
 
-      // Hunt unit keywords or state name detected — try hunt units first, then geocoder
       // Hunt unit search is desktop only due to mobile memory constraints
-      if (!isMobile() && isLikelyHuntUnitQuery(query)) {
-        const foundHuntUnit = await runHuntUnitSearch(query);
-        if (foundHuntUnit) return;
+      if (!isMobile()) {
+        if (isLikelyHuntUnitQuery(query)) {
+          const foundHuntUnit = await runHuntUnitSearch(query);
+          if (foundHuntUnit) return;
+        }
       }
 
       // Geocoder
@@ -1723,9 +1718,11 @@
         const result = await geocodeSearchText(query);
         if (!result) {
           // Last resort — try hunt units if not already tried (desktop only)
-          if (!isMobile() && !isLikelyHuntUnitQuery(query)) {
-            const foundHuntUnit = await runHuntUnitSearch(query);
-            if (foundHuntUnit) return;
+          if (!isMobile()) {
+            if (!isLikelyHuntUnitQuery(query)) {
+              const foundHuntUnit = await runHuntUnitSearch(query);
+              if (foundHuntUnit) return;
+            }
           }
           return;
         }
@@ -1733,7 +1730,6 @@
         const nearest = findNearestProjects(searchLon, searchLat, CONFIG.nearestProjectCount);
         if (!nearest.length) { return; }
         const nearestFeatures = nearest.map(item => item.feature);
-        clearSelection(); clearNearestSearch();
         highlightNearestProjects(nearestFeatures);
         setSearchMarker(searchLon, searchLat);
         fitToFeatures(nearestFeatures, searchLon, searchLat);
@@ -2046,6 +2042,7 @@
           if (clickedProjects.length === 0) {
             clearSelection();
             clearNearestSearch();
+            renderTotalStats();
           }
         });
 
