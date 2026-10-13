@@ -148,6 +148,8 @@
 
     @media (max-width: 640px) {
       #stats-scroll-hint { display: block; }
+      #search-wrapper { display: none !important; }
+      #search-collapsed-btn { display: none !important; }
     }
 
     /* Info panel */
@@ -1664,6 +1666,8 @@
     }
 
     async function runNearestSearch() {
+      if (isMobile()) return;
+
       const input = document.getElementById("location-search");
       const query = input.value.trim();
 
