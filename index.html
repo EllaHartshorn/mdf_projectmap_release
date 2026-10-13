@@ -150,6 +150,9 @@
       #stats-scroll-hint { display: block; }
       #search-wrapper { display: none !important; }
       #search-collapsed-btn { display: none !important; }
+      .mapboxgl-ctrl-zoom-in,
+      .mapboxgl-ctrl-zoom-out,
+      .mapboxgl-ctrl-compass { display: none !important; }
     }
 
     /* Info panel */
@@ -2061,6 +2064,22 @@
           const userLon = e.coords.longitude;
           const userLat = e.coords.latitude;
 
+          // Hide prompt
+          document.getElementById("geolocate-prompt").classList.remove("visible");
+          document.getElementById("geolocate-pulse-ring").classList.remove("visible");
+
+          // On mobile just drop the location dot and zoom — avoid memory spike from nearest project operations
+          if (isMobile()) {
+            setFeatureCollection(CONFIG.userLocationSourceId, [{
+              type: "Feature",
+              geometry: { type: "Point", coordinates: [userLon, userLat] },
+              properties: {}
+            }]);
+            map.flyTo({ center: [userLon, userLat], zoom: 9 });
+            return;
+          }
+
+          // On desktop find and highlight nearest projects
           const nearest = findNearestProjects(userLon, userLat, CONFIG.nearestProjectCount);
           if (!nearest.length) return;
 
@@ -2073,10 +2092,6 @@
             geometry: { type: "Point", coordinates: [userLon, userLat] },
             properties: {}
           }]);
-
-          // Hide prompt after location is found
-          document.getElementById("geolocate-prompt").classList.remove("visible");
-          document.getElementById("geolocate-pulse-ring").classList.remove("visible");
         });
 
         // Show geolocate prompt for QR code arrivals
@@ -2086,8 +2101,8 @@
             if (btn) {
               const rect = btn.getBoundingClientRect();
               const ring = document.getElementById("geolocate-pulse-ring");
-              ring.style.top = (rect.top + rect.height / 2 - 19) + "px";
-              ring.style.left = (rect.left + rect.width / 2 - 19) + "px";
+              ring.style.top = (rect.top + rect.height / 2 - 22) + "px";
+              ring.style.left = (rect.left + rect.width / 2 - 22) + "px";
               ring.style.right = "auto";
             }
 
