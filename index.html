@@ -1063,7 +1063,7 @@
           photosEl.innerHTML += `<img class="sheet-photo" src="${escapeHtml(url)}" alt="Project photo ${index + 1}" loading="lazy">`;
         });
         if (photoUrls.length > 1) {
-          photoCountEl.textContent = `Swipe to see ${photoUrls.length} more photos`;
+          photoCountEl.textContent = isMobile() ? `Swipe to see ${photoUrls.length} more photos` : `Scroll to see ${photoUrls.length} more photos`;
         }
       } else {
         photoPlaceholderEl.style.display = "block";
