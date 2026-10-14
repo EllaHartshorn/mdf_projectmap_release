@@ -1063,7 +1063,7 @@
           photosEl.innerHTML += `<img class="sheet-photo" src="${escapeHtml(url)}" alt="Project photo ${index + 1}" loading="lazy">`;
         });
         if (photoUrls.length > 1) {
-          photoCountEl.textContent = `Swipe to view ${photoUrls.length} photos`;
+          photoCountEl.textContent = `Scroll to see ${photoUrls.length} more photos`;
         }
       } else {
         photoPlaceholderEl.style.display = "block";
@@ -1253,7 +1253,7 @@
         html += `</div>`;
 
         if (photoUrls.length > 1) {
-          html += `<div class="photo-count">Swipe to view ${photoUrls.length} photos</div>`;
+          html += `<div class="photo-count">Scroll to see ${photoUrls.length} more photos</div>`;
         }
       } else {
         html += `
@@ -1545,9 +1545,9 @@
         return false;
       }
 
-      // On mobile skip highlight and fitBounds — just return true so we don't fall through to geocoder
+      // On mobile skip highlight and fitBounds — fall through to geocoder for better zoom behavior
       if (isMobile()) {
-        return true;
+        return false;
       }
 
       clearSelection();
