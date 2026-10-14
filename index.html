@@ -1722,6 +1722,11 @@
           return;
         }
         const [searchLon, searchLat] = result.center;
+        if (isMobile()) {
+          setSearchMarker(searchLon, searchLat);
+          map.flyTo({ center: [searchLon, searchLat], zoom: 9 });
+          return;
+        }
         const nearest = findNearestProjects(searchLon, searchLat, CONFIG.nearestProjectCount);
         if (!nearest.length) { return; }
         const nearestFeatures = nearest.map(item => item.feature);
