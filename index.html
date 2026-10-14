@@ -1545,6 +1545,11 @@
         return false;
       }
 
+      // On mobile skip highlight and fitBounds — just return true so we don't fall through to geocoder
+      if (isMobile()) {
+        return true;
+      }
+
       clearSelection();
       clearNearestSearch();
       highlightNearestProjects(matchingProjects);
