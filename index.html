@@ -148,8 +148,6 @@
 
     @media (max-width: 640px) {
       #stats-scroll-hint { display: block; }
-      #search-wrapper { display: none !important; }
-      #search-collapsed-btn { display: none !important; }
       .mapboxgl-ctrl-zoom-in,
       .mapboxgl-ctrl-zoom-out,
       .mapboxgl-ctrl-compass { display: none !important; }
@@ -1670,7 +1668,6 @@
     }
 
     async function runNearestSearch() {
-      if (isMobile()) return;
 
       const input = document.getElementById("location-search");
       const query = input.value.trim();
@@ -2105,10 +2102,19 @@
               ring.style.top = (rect.top + rect.height / 2 - 22) + "px";
               ring.style.left = (rect.left + rect.width / 2 - 22) + "px";
               ring.style.right = "auto";
+              const prompt = document.getElementById("geolocate-prompt");
+              prompt.style.top = (rect.top + rect.height / 2 - 14) + "px";
+              prompt.style.right = "52px";
             }
 
             document.getElementById("geolocate-prompt").classList.add("visible");
             document.getElementById("geolocate-pulse-ring").classList.add("visible");
+
+            // Auto-dismiss after 6 seconds
+            setTimeout(() => {
+              document.getElementById("geolocate-prompt").classList.remove("visible");
+              document.getElementById("geolocate-pulse-ring").classList.remove("visible");
+            }, 9000);
 
             if (btn) {
               btn.addEventListener("click", () => {
