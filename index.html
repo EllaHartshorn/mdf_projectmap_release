@@ -1682,14 +1682,14 @@
       const foundProject = runProjectSearch(query);
       if (foundProject) return;
 
-      // 5-digit ZIP — go straight to geocoder, zoom only (no point marker, regional result)
+      // 5-digit ZIP — go straight to geocoder
       if (/^\d{5}$/.test(query)) {
         try {
           const result = await geocodeSearchText(query);
           if (!result) { return; }
           const [searchLon, searchLat] = result.center;
           if (isMobile()) {
-            map.flyTo({ center: [searchLon, searchLat], zoom: 10 });
+            map.flyTo({ center: [searchLon, searchLat], zoom: 8 });
             return;
           }
           const nearest = findNearestProjects(searchLon, searchLat, CONFIG.nearestProjectCount);
@@ -1704,7 +1704,6 @@
         return;
       }
 
-      // Hunt unit keywords or state name detected — try hunt units first, then geocoder
       // Hunt unit search is desktop only due to mobile memory constraints
       if (!isMobile() && isLikelyHuntUnitQuery(query)) {
         const foundHuntUnit = await runHuntUnitSearch(query);
@@ -1724,13 +1723,18 @@
         }
         const [searchLon, searchLat] = result.center;
         const placeType = result.place_type ? result.place_type[0] : "place";
-        const isPointResult = ["address", "poi"].includes(placeType);
+        const isPointResult = ["address", "poi", "place"].includes(placeType);
 
         if (isMobile()) {
+          // Mobile: zoom only, no nearest project operations
+          // Drop marker for towns, addresses and POIs; just zoom for states/regions
           if (isPointResult) setSearchMarker(searchLon, searchLat);
-          map.flyTo({ center: [searchLon, searchLat], zoom: isPointResult ? 8 : 9 });
+          const mobileZoom = isPointResult ? 7 : 6;
+          map.flyTo({ center: [searchLon, searchLat], zoom: mobileZoom });
           return;
         }
+
+        // Desktop: full nearest project highlight
         const nearest = findNearestProjects(searchLon, searchLat, CONFIG.nearestProjectCount);
         if (!nearest.length) { return; }
         const nearestFeatures = nearest.map(item => item.feature);
