@@ -2020,16 +2020,14 @@
 
           const clusterId = features[0].properties.cluster_id;
 
-          clearSelection();
+          map.getSource(CONFIG.sourceId).getClusterExpansionZoom(clusterId, (err, zoom) => {
+            if (err) return;
 
-          map.getSource(CONFIG.sourceId).getClusterExpansionZoom(clusterId)
-            .then(zoom => {
-              map.easeTo({
-                center: features[0].geometry.coordinates,
-                zoom: zoom
-              });
-            })
-            .catch(() => {});
+            map.easeTo({
+              center: features[0].geometry.coordinates,
+              zoom: zoom
+            });
+          });
         });
 
         map.on("click", CONFIG.projectLayerId, (e) => {
@@ -2039,8 +2037,10 @@
           const props = feature.properties;
           const coords = feature.geometry.coordinates.slice();
 
-          renderStats("Selected Project Impact", buildStatsFromProps(props));
-          highlightProject(feature);
+          if (!isMobile()) {
+            renderStats("Selected Project Impact", buildStatsFromProps(props));
+            highlightProject(feature);
+          }
 
           // Use sheet on all screen sizes, positioned differently via CSS
           if (activePopup) {
