@@ -735,7 +735,7 @@
         <input
           id="location-search"
           type="text"
-          placeholder="Example: Laramie, WY or 82070"
+          placeholder="Example: Bozeman, MT or 82070"
           autocomplete="off"
         >
         <button id="search-button" type="button">Search</button>
@@ -2020,14 +2020,16 @@
 
           const clusterId = features[0].properties.cluster_id;
 
-          map.getSource(CONFIG.sourceId).getClusterExpansionZoom(clusterId, (err, zoom) => {
-            if (err) return;
+          clearSelection();
 
-            map.easeTo({
-              center: features[0].geometry.coordinates,
-              zoom: zoom
-            });
-          });
+          map.getSource(CONFIG.sourceId).getClusterExpansionZoom(clusterId)
+            .then(zoom => {
+              map.easeTo({
+                center: features[0].geometry.coordinates,
+                zoom: zoom
+              });
+            })
+            .catch(() => {});
         });
 
         map.on("click", CONFIG.projectLayerId, (e) => {
@@ -2145,7 +2147,7 @@
 
         if (!isMobile()) {
           document.getElementById("map-subtitle").innerHTML = '<span id="search-location-label">Search by Location:</span> Enter an address, town, ZIP, or hunt unit';
-          document.getElementById("location-search").placeholder = "Example: Laramie, WY or Hunt Unit 270";
+          document.getElementById("location-search").placeholder = "Example: Bozeman, MT or Hunt Unit 270";
         }
 
         // Preload hunt units in background after map is ready
