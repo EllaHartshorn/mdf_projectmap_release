@@ -148,10 +148,14 @@
 
     @media (max-width: 640px) {
       #stats-scroll-hint { display: block; }
+      #search-wrapper { display: none !important; }
+      #search-collapsed-btn { display: none !important; }
+      #map-subtitle { display: none !important; }
       .mapboxgl-ctrl-zoom-in,
       .mapboxgl-ctrl-zoom-out,
       .mapboxgl-ctrl-compass { display: none !important; }
-      .mapboxgl-ctrl-top-right { top: 140px !important; }
+      .mapboxgl-ctrl-top-right { top: 90px !important; }
+      #map-header { padding: 8px 8px 8px 8px; }
     }
 
     /* Info panel */
@@ -1731,9 +1735,6 @@
         const isPointResult = ["address", "poi", "place"].includes(placeType);
 
         if (isMobile()) {
-          // Mobile: zoom only, no nearest project operations
-          // Drop marker for towns, addresses and POIs; just zoom for states/regions
-          if (isPointResult) setSearchMarker(searchLon, searchLat);
           const mobileZoom = isPointResult ? 7 : 6;
           map.flyTo({ center: [searchLon, searchLat], zoom: mobileZoom });
           return;
